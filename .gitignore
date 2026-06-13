@@ -1,0 +1,15 @@
+# Mnemo — never commit data, secrets, or stores
+data/
+store/
+backups/
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.db-wal
+.env
+__pycache__/
+*.pyc
+dist/
+build/
+*.spec
