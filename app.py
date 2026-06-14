@@ -42,6 +42,11 @@ class UpdateIn(BaseModel):
     tree_path: Optional[str] = None
 
 
+class SecretFieldsIn(BaseModel):
+    vault: str = config.DEFAULT_VAULT
+    fields: list = []  # [{label, value, kind}]
+
+
 # --- Health + meta -----------------------------------------------------------
 @app.get("/api/health")
 def health():
@@ -151,6 +156,15 @@ def update(entry_id: int, body: UpdateIn):
     if not ok:
         raise HTTPException(404, "not found")
     return db.get_entry(body.vault, entry_id)
+
+
+@app.put("/api/entry/{entry_id}/secrets")
+def update_secrets(entry_id: int, body: SecretFieldsIn):
+    """Replace an entry's secret fields — lets a mis-parsed credential be fixed."""
+    ok = db.update_secret_fields(body.vault, entry_id, body.fields)
+    if not ok:
+        raise HTTPException(404, "not found")
+    return db.get_entry(body.vault, entry_id, include_secret=True)
 
 
 @app.delete("/api/entry/{entry_id}")

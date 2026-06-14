@@ -50,6 +50,13 @@ shouldnt = {
 for n, t in shouldnt.items():
     check("not-secret: " + n, not s.detect(t)["is_secret"])
 
+# Regression: a labeled (compound) app password must be captured as the password,
+# and the service/account name must NOT be mistaken for the password.
+_g = s.detect("Gmail: surpriseb4y5\nApp password: abcd efgh ijkl mnop")
+_pw = [f["value"] for f in _g["fields"] if f["kind"] == "password"]
+check("gmail app-pw captured intact", "abcd efgh ijkl mnop" in _pw)
+check("account name not mistaken for pw", not any("surpriseb4y5" in v.lower() for v in _pw))
+
 print("\n=== Part 2: HTTP integration (needs server on :7575) ===")
 try:
     import httpx

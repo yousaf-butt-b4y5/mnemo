@@ -273,6 +273,31 @@ def update_entry(vault: str, entry_id: int, *, title=None, summary=None,
         conn.close()
 
 
+def update_secret_fields(vault: str, entry_id: int, fields: List[Dict]) -> bool:
+    """Replace an entry's secret fields (so a mis-parsed credential can be fixed).
+    Values stay in `secret_fields` only — never in the FTS index."""
+    conn = connect(vault)
+    try:
+        row = conn.execute("SELECT id FROM entries WHERE id=?", (entry_id,)).fetchone()
+        if not row:
+            return False
+        conn.execute("DELETE FROM secret_fields WHERE entry_id=?", (entry_id,))
+        for f in fields:
+            conn.execute(
+                "INSERT INTO secret_fields (entry_id, label, value, kind) VALUES (?,?,?,?)",
+                (entry_id, (f.get("label") or "").strip(), f.get("value") or "",
+                 (f.get("kind") or "password").strip()),
+            )
+        conn.execute(
+            "UPDATE entries SET is_secret=1, summary=?, updated=? WHERE id=?",
+            (f"{len(fields)} protected field(s)", _now(), entry_id),
+        )
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
 def delete_entry(vault: str, entry_id: int) -> bool:
     conn = connect(vault)
     try:

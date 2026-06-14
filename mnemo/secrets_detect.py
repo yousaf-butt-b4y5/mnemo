@@ -44,9 +44,14 @@ _ALWAYS_SECRET_KEYS = {
 }
 
 # label: value  /  label = value   (password, username, host, etc.)
+# Up to 3 descriptive words may precede the keyword, so compound labels like
+# "App password:", "Gmail Password =", "Account Login:" are matched (the keyword
+# must be the last token before the separator). The value may contain spaces, so
+# space-separated app passwords ("abcd efgh ijkl mnop") are captured intact.
 KV_LINE = re.compile(
-    r"(?im)^\s*(?P<key>password|passwort|pass|pwd|kennwort|user(?:name)?|login|"
-    r"benutzer|email|e-?mail|host|server|url|port|token|api[_-]?key|secret|pin)"
+    r"(?im)^\s*(?:[A-Za-z][\w.()/-]*\s+){0,3}"
+    r"(?P<key>password|passwort|pass|pwd|kennwort|user(?:name)?|login|"
+    r"benutzer|account|konto|email|e-?mail|host|server|url|port|token|api[_-]?key|secret|pin)"
     r"\s*[:=]\s*(?P<val>.+?)\s*$"
 )
 
@@ -55,7 +60,12 @@ USERPASS = re.compile(r"\b([A-Za-z0-9._%+-]{2,}@?[A-Za-z0-9._-]*)\s*[:|]\s*(\S{3
 
 SECRET_KEYS = {"password", "passwort", "pass", "pwd", "kennwort", "token",
                "api_key", "api-key", "apikey", "secret", "pin"}
-USER_KEYS = {"user", "username", "login", "benutzer", "email", "e-mail", "emai l"}
+USER_KEYS = {"user", "username", "login", "benutzer", "account", "konto", "email", "e-mail"}
+# Service / label words that must never be treated as a username in the
+# user:pass shorthand (so "Gmail: surpriseb4y5" isn't read as user/password).
+LABEL_WORDS = {"gmail", "email", "mail", "login", "account", "konto", "user",
+               "username", "password", "passwort", "kennwort", "app", "web",
+               "site", "server", "host", "url", "token", "service", "portal", "name"}
 
 
 def _entropy(s: str) -> float:
@@ -155,8 +165,11 @@ def detect(text: str) -> Dict:
         for um in USERPASS.finditer(text):
             user, pw = um.group(1), um.group(2)
             seg = text[max(0, um.start() - 3):um.end() + 3]
-            # skip URLs (https://…), time (10:30), and scheme:path
-            if "://" in seg or pw.startswith("/") or user.lower() in _url_schemes:
+            # skip URLs (https://…), time (10:30), scheme:path, and lines where
+            # the "user" is really a service/label word (e.g. "Gmail: name") —
+            # otherwise the account name gets mis-saved as the password.
+            if ("://" in seg or pw.startswith("/")
+                    or user.lower() in _url_schemes or user.lower() in LABEL_WORDS):
                 continue
             if pw.isdigit():
                 continue
