@@ -426,7 +426,7 @@ paste.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventD
   if(ev==='drop'&&e.dataTransfer.files.length){const i=document.getElementById('file-in');i.files=e.dataTransfer.files;doUpload(i)}}));
 
 (async function init(){await checkHealth();setInterval(checkHealth,15000);
-  await refreshAll();showList();paste.focus()})();
+  await refreshAll();showList();paste.focus({preventScroll:true})})();
 </script>
 </body>
 </html>
