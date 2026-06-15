@@ -200,7 +200,7 @@ const state = {vault:'personal', vaults:[], tree:[], view:'recent', activePath:'
 let entries = [];
 
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function clean(s){return (s||'').replace(/\\?\\?id=[0-9a-f]{8}-[0-9a-f-]{27,}/gi,'').replace(/\s+/g,' ').trim()}
+function clean(s){return (s||'').replace(/\\id=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ?/gi,'').replace(/[ \t]{2,}/g,' ').trim()}
 function toast(m,c){const t=document.getElementById('toast');t.innerHTML=esc(m)+(c?` <span class="clr">${esc(c)}</span>`:'');
   t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600)}
 async function api(p,o){const r=await fetch(API+p,o);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.status);return r.json()}
@@ -291,14 +291,14 @@ async function openEntry(id){
       <button class="btn primary" onclick="revealSecrets(${id})">👁 Reveal</button>
       <div class="snote">🛡️ Stored locally · masked by default · never sent to any cloud AI</div>`;
   }else{
-    const isCode=e.type==='code';let ct=esc(e.content||e.raw||'');
+    const isCode=e.type==='code';let ct=esc(clean(e.content||e.raw||''));
     if(e.type==='link')ct=ct.replace(/(https?:\/\/\S+)/g,'<a class="lk" href="$1" target="_blank">$1</a>');
     body=`<div class="body ${isCode?'code':''}">${ct||'<span style="color:var(--hint)">(empty)</span>'}</div>
       ${!isCode?`<button class="btn" style="margin-top:11px" onclick="copyText()">📋 Copy</button>`:''}`;
   }
   document.getElementById('content').innerHTML=`<div class="detail ${e.is_secret?'secret':''}">
     <div class="dhead"><div class="di">${ico}</div>
-      <div style="flex:1;min-width:0"><h2>${esc(e.title)}</h2>
+      <div style="flex:1;min-width:0"><h2>${esc(clean(e.title||''))}</h2>
         <div class="dsub">${esc(e.type)} · ${esc(e.tree_path||'')} · ${(e.updated||'').slice(0,10)}</div></div>
       <div class="da"><button class="btn" onclick="showList()">← Back</button>
         <button class="btn" onclick="startEdit(${id})">✏️ Edit</button>
