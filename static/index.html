@@ -6,14 +6,15 @@
 <title>Mnemo</title>
 <style>
 :root{
-  --rail:#141418; --side:#1b1c21; --main:#212229;
-  --card:#282932; --card2:#2f3039; --input:#17181d;
-  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.13);
-  --text:#e7e7ee; --muted:#9a9aab; --hint:#5f5f72;
-  --accent:#8b7cf0; --accent-bg:rgba(139,124,240,.14);
-  --green:#4eca8b; --red:#e0566a; --amber:#e8aa40; --blue:#5a9df5;
-  --work:#e8aa40; --work-bg:rgba(232,170,64,.13);
+  --rail:#191613; --side:#201c18; --main:#26221e;
+  --card:#2e2a24; --card2:#37322b; --input:#1b1814;
+  --border:rgba(255,255,255,.06); --border2:rgba(255,255,255,.12);
+  --text:#ece8e1; --muted:#a8a298; --hint:#6e685e;
+  --accent:#cc785c; --accent-bg:rgba(204,120,92,.15);
+  --green:#5fa372; --red:#cc6b5e; --amber:#d9a441; --blue:#6a93c0;
+  --work:#d9a441; --work-bg:rgba(217,164,65,.13);
   --font:'Segoe UI Variable','Segoe UI',system-ui,sans-serif;
+  --serif:'Georgia','Times New Roman',serif;
   --mono:'Cascadia Code','Fira Code',Consolas,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -28,8 +29,8 @@ input,textarea{font-family:inherit}
 
 /* ---- Rail (vault "servers") ---- */
 .rail{background:var(--rail);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:10px}
-.rail .logo{width:44px;height:44px;border-radius:14px;background:var(--accent-bg);
-  display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:6px}
+.rail .logo{width:44px;height:44px;border-radius:13px;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font:600 23px var(--serif);margin-bottom:6px}
 .vbtn{position:relative;width:46px;height:46px;border-radius:50%;background:var(--side);
   display:flex;align-items:center;justify-content:center;font-size:20px;transition:.18s;color:var(--muted)}
 .vbtn:hover,.vbtn.active{border-radius:16px;background:var(--accent);color:#fff}
@@ -45,8 +46,9 @@ input,textarea{font-family:inherit}
 
 /* ---- Sidebar (folders) ---- */
 .sidebar{background:var(--side);display:flex;flex-direction:column;border-right:1px solid var(--border)}
-.side-head{padding:15px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-.side-head b{font-size:16px;letter-spacing:-.01em} .side-head .vl{font-size:11px;color:var(--hint)}
+.side-head{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.side-head b{font:600 19px var(--serif);letter-spacing:.01em;display:block;line-height:1.1}
+.side-head .vl{font-size:11px;color:var(--hint);letter-spacing:.02em}
 .search{padding:10px 12px}
 .search input{width:100%;background:var(--input);border:1px solid transparent;border-radius:8px;
   color:var(--text);font-size:12.5px;padding:8px 11px;outline:none}
@@ -96,7 +98,7 @@ body.work .work-banner{display:block}
 .dhead .di{width:42px;height:42px;border-radius:11px;background:var(--input);flex-shrink:0;
   display:flex;align-items:center;justify-content:center;font-size:20px}
 .detail.secret .di{background:var(--work-bg)}
-.dhead h2{font-size:19px}.dhead .dsub{font-size:12px;color:var(--muted);margin-top:3px}
+.dhead h2{font:600 20px var(--serif);letter-spacing:.01em}.dhead .dsub{font-size:12px;color:var(--muted);margin-top:4px}
 .dhead .da{margin-left:auto;display:flex;gap:6px}
 .btn{background:var(--card);border-radius:8px;padding:7px 13px;font-size:13px;font-weight:500;
   color:var(--text);transition:.1s;display:inline-flex;align-items:center;gap:6px}
@@ -157,14 +159,14 @@ a.lk{color:var(--blue)}
 <div class="app" id="app">
 
   <nav class="rail">
-    <div class="logo">🗂️</div>
+    <div class="logo">M</div>
     <div id="rail"></div>
     <div class="spacer"></div>
     <span class="dot" id="conn-dot" title="connection"></span>
   </nav>
 
   <aside class="sidebar">
-    <div class="side-head"><b>Mnemo</b><span class="vl" id="vault-label">personal</span></div>
+    <div class="side-head"><b>Mnemo</b><span class="vl" id="vault-label">personal vault</span></div>
     <div class="search"><input id="search" placeholder="Search everything…" oninput="onSearch()" autocomplete="off"></div>
     <div class="nav">
       <button class="item active" data-view="recent" onclick="setView('recent')"><span class="ico">🕘</span><span class="nm">Recent</span></button>
@@ -215,7 +217,7 @@ async function loadVaults(){
     b.onclick=()=>switchVault(v.name);rail.appendChild(b);
   });
   const cur=d.vaults.find(v=>v.name===state.vault)||{};
-  document.getElementById('vault-label').textContent=state.vault;
+  document.getElementById('vault-label').textContent=state.vault+' vault';
   document.getElementById('all-cnt').textContent=cur.entries||0;
 }
 function switchVault(n){state.vault=n;state.view='recent';state.activePath='';state.query='';

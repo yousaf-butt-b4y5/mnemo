@@ -108,24 +108,24 @@ def detect(text: str) -> Dict:
 
     if SSH_KEY.search(text):
         fields.append({"label": "SSH private key", "value": text.strip(),
-                       "kind": "ssh_key"})
+                       "kind": "ssh_key", "conf": "high"})
         kinds.append("ssh_key")
 
     for name, pat in API_KEY_PATTERNS:
         for m in pat.findall(text):
             val = m if isinstance(m, str) else m[0]
             fields.append({"label": f"{name} key", "value": val.strip(),
-                           "kind": "api_key"})
+                           "kind": "api_key", "conf": "high"})
             kinds.append("api_key")
 
     for m in JWT.findall(text):
-        fields.append({"label": "JWT token", "value": m, "kind": "token"})
+        fields.append({"label": "JWT token", "value": m, "kind": "token", "conf": "high"})
         kinds.append("token")
 
     # Credentials inside a URL (scheme://user:pass@host)
     for um in BASIC_AUTH_URL.finditer(text):
         fields.append({"label": "Username", "value": um.group(1), "kind": "username"})
-        fields.append({"label": "Password", "value": um.group(2), "kind": "password"})
+        fields.append({"label": "Password", "value": um.group(2), "kind": "password", "conf": "high"})
         kinds.append("password")
 
     # Inline secret keys (connection strings, env vars, AWS/Azure keys)
@@ -138,6 +138,9 @@ def detect(text: str) -> Dict:
                 "label": im.group(1).strip().title(),
                 "value": val,
                 "kind": "password" if is_pw else "api_key",
+                # A plain "password:" is a weak signal (low); structured keys
+                # (AccountKey, connection strings, strong values) stay high.
+                "conf": "low" if is_pw else "high",
             })
             kinds.append("password" if is_pw else "api_key")
 
@@ -149,7 +152,7 @@ def detect(text: str) -> Dict:
             continue
         if key in {_norm_key(k) for k in SECRET_KEYS}:
             fields.append({"label": m.group("key").strip().title(),
-                           "value": val, "kind": "password"})
+                           "value": val, "kind": "password", "conf": "low"})
             kinds.append("password")
         elif key in {_norm_key(k) for k in USER_KEYS}:
             fields.append({"label": m.group("key").strip().title(),
@@ -175,7 +178,7 @@ def detect(text: str) -> Dict:
                 continue
             if _looks_like_password(pw):
                 fields.append({"label": "Username", "value": user, "kind": "username"})
-                fields.append({"label": "Password", "value": pw, "kind": "password"})
+                fields.append({"label": "Password", "value": pw, "kind": "password", "conf": "low"})
                 kinds.append("password")
                 break
 
@@ -190,9 +193,18 @@ def detect(text: str) -> Dict:
         deduped.append(f)
     fields = deduped
 
-    is_secret = bool(fields) and any(
-        f["kind"] in ("password", "api_key", "ssh_key", "token") for f in fields
-    )
+    # Confidence + shape. High-confidence patterns (API/SSH keys, JWTs,
+    # connection strings, URL creds) always protect. A WEAK password signal
+    # (a "password:" line or user:pass shorthand) only flags the whole entry as
+    # secret when the note is credential-SHAPED (short) — so a long note
+    # (to-dos, CV, prompts) with one stray key:value line stays a readable note
+    # instead of being masked.
+    _lines = [l for l in text.splitlines() if l.strip()]
+    cred_shaped = len(_lines) <= 8 and len(text) <= 400
+    high = any(f.get("conf") == "high" and f["kind"] in ("password", "api_key", "ssh_key", "token")
+               for f in fields)
+    low_pw = any(f.get("conf") == "low" and f["kind"] == "password" for f in fields)
+    is_secret = high or (low_pw and cred_shaped)
 
     title_hint = ""
     if is_secret:

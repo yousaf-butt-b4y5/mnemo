@@ -57,6 +57,13 @@ _pw = [f["value"] for f in _g["fields"] if f["kind"] == "password"]
 check("gmail app-pw captured intact", "abcd efgh ijkl mnop" in _pw)
 check("account name not mistaken for pw", not any("surpriseb4y5" in v.lower() for v in _pw))
 
+# Regression: a LONG note with only a weak key:value signal must stay a NOTE,
+# not get masked as a secret (the sticky-migration over-detection bug).
+_long = "Project plan\n" + "\n".join(f"- step {i}" for i in range(12)) + "\npassword: ChangedItLater9"
+check("long mixed note not over-masked", not s.detect(_long)["is_secret"])
+# …but a real API key in any note still protects.
+check("api key still protects", s.detect("notes here\n" + "x\n"*12 + "key sk_" + "live_51HxYzAbCdEfGhIjKlMnOpQr")["is_secret"])
+
 print("\n=== Part 2: HTTP integration (needs server on :7575) ===")
 try:
     import httpx
