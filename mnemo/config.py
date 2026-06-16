@@ -41,8 +41,9 @@ CLOUD_ALLOWED_VAULTS = {"personal"}
 
 # --- AI organization engine --------------------------------------------------
 OLLAMA_URL = os.environ.get("MNEMO_OLLAMA_URL", "http://localhost:11434")
-# Default to a small, fast, generally-present local model. Override via env.
-OLLAMA_MODEL = os.environ.get("MNEMO_OLLAMA_MODEL", "gemma3:4b")
+# llama3.1:8b is the single local model kept on this box (the §7 privacy lever).
+# Good tool/JSON behaviour for the organize prompt. Override via env.
+OLLAMA_MODEL = os.environ.get("MNEMO_OLLAMA_MODEL", "llama3.1:8b")
 # Cold-load on a 6 GB GPU can take >30s; warm calls are fast (model kept alive).
 OLLAMA_TIMEOUT = float(os.environ.get("MNEMO_OLLAMA_TIMEOUT", "75"))
 
